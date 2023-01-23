@@ -4,10 +4,7 @@ import java.math.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
-//import javax.servlet.http.Cookie;
 import java.io.File; 
-
-//Testtesttest
 
 public class Server {
 
@@ -16,6 +13,10 @@ public class Server {
     public static void main(String[] args) {
         new Server();
     }
+
+    /*  public static String put_lastname_in_payload(String response_payload,String firstName){
+        return response_payload.replace("$last_name$",firstName);
+    } */
 
     public static String readFile(String filename)throws IOException{
         BufferedReader file=new BufferedReader(new FileReader(filename));
@@ -26,6 +27,12 @@ public class Server {
         }
         return contents;
     }
+
+    public static String readPayload(BufferedReader scktIn,int contentLength)throws IOException{
+        char[] cbuf=new char[contentLength];
+        scktIn.read(cbuf, 0, contentLength);
+        return new String(cbuf);
+        }
 
     public Server() { 
         try (ServerSocket serverSocket = new ServerSocket(this.port)) {
@@ -45,28 +52,64 @@ public class Server {
 
                         if (line.matches("GET\\s+.*")) {
                             // process the GET request
-                            int random_number = (int)Math.random()*(101);
                             int counter = 0;
                             String payload=readFile("guess.html");
-
-
-
                             Random rand = new Random();
 		                    int randNum=rand.nextInt(1000);
 		                    String newCookie="personuppgifter="+randNum;
-                            //ArrayList <Integer> l = new ArrayList<Integer>;
-                            //l.put((Arrays.asList(counter, random_number));
-                            map.put(newCookie, int[]);
-                            int[] test = new int[]
-                            cookie_map.put(newCookie, counter);
-                            String response = "HTTP/1.1 200 OK\nDate: Mon, 15 Jan 2018 22:14:15 GMT\nSet-Cookie: "+newCookie+"\nContent-Length: "+payload.length()+"\nConnection: close\nContent-Type: text/html\n\n";;
+                            
+                            int [] list = {randNum,counter, 0, 100};
+                            cookie_map.put(newCookie, list);
+                            String response = "HTTP/1.1 200 OK\nDate: Mon, 15 Jan 2018 22:14:15 GMT\nSet-Cookie: "+newCookie+"\nContent-Length: "+payload.length()+"\nConnection: close\nContent-Type: text/html\n\n";
                             response+=payload;
                             out.write(response);    
 		                    socket.shutdownOutput();
 
-
                         
                         } else if (line.matches("POST\\s+.*")) {
+                            int content_length= Integer.parseInt((((line.split("Content-Length: "))[1]).split("\n"))[0]);
+	                        String payload=readPayload(in,content_length);
+
+                            String cookie =  line.substring(line.indexOf("Cookie: ")+"Cookie: ".length());
+                            cookie=cookie.substring(0,cookie.indexOf("\n"));
+                            cookie=cookie.strip();
+                            //cookie_map.
+
+                            int counter = cookie_map.get(cookie)[0];
+                            int randNum = cookie_map.get(cookie)[1];
+                            int [] list = {randNum,counter+1, cookie_map.get(cookie)[2], cookie_map.get(cookie)[3]};
+                            //cookie_map.put(cookie, cookie_map.get(cookie)[0]+1);
+                            cookie_map.put(cookie, list);
+                            //funkar bara om man gissar på 10-99
+                            String guess = payload.substring(payload.indexOf("gissadeTalet: "), payload.length());
+                            int guessInt = Integer.parseInt(guess);
+                            if (guessInt == randNum){
+                                //Du gissade rätt
+                                cookie_map.remove(cookie);
+                                payload = readFile("victory.html");
+                                //skriv in 
+                                out.write(payload);
+                            }
+                            else{
+                                int lowerLimit;
+                                int upperLimit;
+                                int oldLowerLimit = cookie_map.get(cookie)[2];
+                                int oldUpperLimit = cookie_map.get(cookie)[3];
+                                if (guessInt > randNum){
+                                    upperLimit = guessInt;
+                                    lowerLimit = oldLowerLimit;
+                                }
+                                else if(guessInt < randNum){
+                                    upperLimit = oldUpperLimit;
+                                    lowerLimit = guessInt;
+                                }
+                                int [] newList = {cookie_map.get(cookie)[0], cookie_map.get(cookie)[1], lowerLimit, upperLimit};
+                                cookie_map.put(cookie, newList);
+                                }
+                    
+                            }
+
+
                             // process the POST request
                             //System.out.println("Got a POST-request"+headers+"<");
                         }
