@@ -1,0 +1,1 @@
+vad ska hända när man lägger till och tar bort tider? använda sockets?
